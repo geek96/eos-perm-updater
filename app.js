@@ -2,6 +2,19 @@ Array.prototype.insert = function ( index, item ) {
   this.splice( index, 0, item );
 };
 
+let blacklist = [];
+function is_valid_public_key(key) {
+	key = key.trim();
+	if(blacklist.indexOf(key) != -1) {
+		return false;
+	}
+	return eosjs_ecc.isValidPublic(key);
+}
+function is_valid_account_name(account_name) {
+		let re = new RegExp("^([a-z1-5]){12}$");
+		return re.test(account_name);
+}
+
 new Vue({
   el: '#app',
   data() {
@@ -41,6 +54,41 @@ new Vue({
   methods: {
     getPermission: function(perm) {
       return this.eosAccount.permissions.find(p => p.perm_name === perm)
+    },
+    checkForm: function () {
+      if(!this.isEmpty(this.account.active)) {
+        if( !(is_valid_public_key(this.account.active) || is_valid_account_name(this.account.active))) {
+          this.msg = {
+            type: "error",
+            message: "Please provide either a valid public key our account name for active permissions",
+            isError: true
+          }
+          return false;
+        }
+      }
+      
+      if(!this.isEmpty(this.account.owner)) {
+        if( !(is_valid_public_key(this.account.owner) || is_valid_account_name(this.account.owner))) {
+          this.msg = {
+            type: "error",
+            message: "Please provide either a valid public key our account name for owner permissions",
+            isError: true
+          }
+          return false;
+        }
+      }
+      if(this.isEmpty(this.account.active) && this.isEmpty(this.account.owner)) {
+        this.msg = {
+          type: "error",
+          message: "Please enter something",
+          isError: true
+        }
+        return false;
+      }
+      return true;
+    },
+    isEmpty : function(str) {
+      return str.trim() == "";
     },
     isKey: function(str) {
       if (str.startsWith('EOS') && str.length === 53) {
@@ -165,6 +213,10 @@ new Vue({
     },
     updateAccountKey: function () {
       this.reset()
+
+      if(!this.checkForm()) {
+        return;
+      };
       const self = this
       if (self.scatter) {
         const eos = self.scatter.eos(self.network, Eos, {
