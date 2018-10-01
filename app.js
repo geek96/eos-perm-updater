@@ -36,13 +36,6 @@ new Vue({
     }
   },  
   mounted() {
-    document.addEventListener('scatterLoaded', scatterExtension => {
-      const scatter = window.scatter;
-      window.scatter = null;
-      scatter.requireVersion(3.0);
-      this.scatter = scatter
-      this.forgetIdentity()    
-    })
     this.eos = EosApi(this.eosOptions)
   },
   methods: {
@@ -87,11 +80,23 @@ new Vue({
     connectScatter: function () {
       this.reset()
       this.eosUpdatedPerms = [] 
-      if (this.scatter) {
-        var options = {
-          accounts: [this.network]
+      var self = this
+      var options = {
+        accounts: [this.network]
+      }
+      scatter.connect('eos-account-creator.com').then(connected => {
+        if(!connected) {
+          this.msg = {
+            type: 'Sorry',
+            message: 'We are unable to locate the scatter plugin!',
+            isError: true
+          }
+          return;
         }
-        var self = this
+        const scatter = window.scatter;
+        window.scatter = null;
+        this.scatter = scatter
+        this.forgetIdentity() 
         this.scatter.getIdentity(options)
           .then(function (identity) {
             identity.accounts.forEach((p) => {
@@ -110,14 +115,12 @@ new Vue({
           })
           .catch(function (err) {
             self.msg = err
-          })
-      } else {
-        this.msg = {
-          type: 'Sorry',
-          message: 'We are unable to locate the scatter plugin!',
-          isError: true
-        }
-      }
+          })   
+      })
+      
+      
+      
+      
     },
     forgetIdentity: function() {
       this.reset()
