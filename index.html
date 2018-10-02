@@ -40,9 +40,7 @@
           <p>You can use this service (for free) to add a new Active Key to your EOS account as well as revoke and replace a compromised Active Key and change it to another (new) Active Key.</p>
           <p>You will never have to expose your Owner Private Key ever again - not even to your wallet. Just use your Active Key instead. You can use your Active key to engage with wallets, dapps and sign everyday transactions on EOS.</p>
           <p class="text-danger">*Always Keep ALL Your Private Keys Safe</p>
-          <hr />
-          <h3 class="fw-bolder mb-3">For testing and demo only!</h3>
-          <button class="btn btn-danger btn-lg t-up fs-14 btn-block" @click="suggestNetwork">Suggest Jungle Testnet</button>
+          
         </div>
         <div class="col-md-6">
           <div class="card">
@@ -97,8 +95,8 @@
                 </div>
                 <div v-if="identity">
                   <small class="pb-2 d-block text-muted t-up ls-1">
-                    <input type="checkbox" v-model="userConfirmation" />
-                    Are you sure you want to perform this action?</small>
+                    <input type="checkbox" v-model="userConfirmation" id="are_you_sure" />
+                    <label for="are_you_sure">Please update my account permission to the above values</label></small>
                   <button @click="updateAccountKey" type="button" class="btn btn-success t-up ls-1 fs-14 btn-block btn-lg" :disabled="!userConfirmation">
                     Update your account permissions
                   </button>
@@ -115,6 +113,7 @@
   </div>
   </section>
   </div>
+  <script src="scatter.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/eosjs-ecc@4.0.3/lib/eosjs-ecc.min.js" integrity="sha512-XWIwj+P5ClTipsRsO+yz0U8z4Zp9RmGTlJT9+BrgngPFLitzJnaVaNi4Q7nkbHs2W+WeZp0S9EBhZ8KbBC8Yyg=="
     crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/eosjs@16.0.2/lib/eos.min.js" integrity="sha512-22gPq/bBKtvD6mdthugNUuGmYEdKkVnnhvSnl4k62eNPmKoFEmNbmxLIU4Hz/5EsmCX2jsYIwkaiz507wT+fBw=="

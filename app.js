@@ -2,6 +2,19 @@ Array.prototype.insert = function ( index, item ) {
   this.splice( index, 0, item );
 };
 
+let blacklist = [];
+function is_valid_public_key(key) {
+	key = key.trim();
+	if(blacklist.indexOf(key) != -1) {
+		return false;
+	}
+	return eosjs_ecc.isValidPublic(key);
+}
+function is_valid_account_name(account_name) {
+		let re = new RegExp("^([a-z1-5]){12}$");
+		return re.test(account_name);
+}
+
 new Vue({
   el: '#app',
   data() {
@@ -19,35 +32,63 @@ new Vue({
       tx: null,
       eos: null,
       eosOptions: {
-        httpEndpoint: 'http://dev.cryptolions.io:38888/',
+        httpEndpoint: 'https://publicapi-mainnet.eosauthority.com',
         verbose: false,
       },
       eosAccount: null,
       eosError: null,
       eup: {},
       network: {
-        name: "EOS Jungle Testnet",
-        protocol: 'http',
+        name: "EOS Mainnet",
+        protocol: 'https',
         blockchain: 'eos',
-        host: 'dev.cryptolions.io',
-        port: 38888,
-        chainId: '038f4b0fc8ff18a4f0842a8f0564611f6e96e8535901dd45e43ac8691a1c4dca'
+        host: 'publicapi-mainnet.eosauthority.com',
+        port: 443,
+        chainId: 'aca376f206b8fc25a6ed44dbdc66547c36c6c33e3a119ffbeaef943642f0e906'
       }
     }
   },  
   mounted() {
-    document.addEventListener('scatterLoaded', scatterExtension => {
-      const scatter = window.scatter;
-      window.scatter = null;
-      scatter.requireVersion(3.0);
-      this.scatter = scatter
-      this.forgetIdentity()    
-    })
     this.eos = EosApi(this.eosOptions)
   },
   methods: {
     getPermission: function(perm) {
       return this.eosAccount.permissions.find(p => p.perm_name === perm)
+    },
+    checkForm: function () {
+      if(!this.isEmpty(this.account.active)) {
+        if( !(is_valid_public_key(this.account.active) || is_valid_account_name(this.account.active))) {
+          this.msg = {
+            type: "error",
+            message: "Please provide either a valid public key our account name for active permissions",
+            isError: true
+          }
+          return false;
+        }
+      }
+      
+      if(!this.isEmpty(this.account.owner)) {
+        if( !(is_valid_public_key(this.account.owner) || is_valid_account_name(this.account.owner))) {
+          this.msg = {
+            type: "error",
+            message: "Please provide either a valid public key our account name for owner permissions",
+            isError: true
+          }
+          return false;
+        }
+      }
+      if(this.isEmpty(this.account.active) && this.isEmpty(this.account.owner)) {
+        this.msg = {
+          type: "error",
+          message: "Please enter something",
+          isError: true
+        }
+        return false;
+      }
+      return true;
+    },
+    isEmpty : function(str) {
+      return str.trim() == "";
     },
     isKey: function(str) {
       if (str.startsWith('EOS') && str.length === 53) {
@@ -87,11 +128,23 @@ new Vue({
     connectScatter: function () {
       this.reset()
       this.eosUpdatedPerms = [] 
-      if (this.scatter) {
-        var options = {
-          accounts: [this.network]
+      var self = this
+      var options = {
+        accounts: [this.network]
+      }
+      scatter.connect('eos-account-creator.com').then(connected => {
+        if(!connected) {
+          this.msg = {
+            type: 'Sorry',
+            message: 'We are unable to locate the scatter plugin!',
+            isError: true
+          }
+          return;
         }
-        var self = this
+        const scatter = window.scatter;
+        window.scatter = null;
+        this.scatter = scatter
+        this.forgetIdentity() 
         this.scatter.getIdentity(options)
           .then(function (identity) {
             identity.accounts.forEach((p) => {
@@ -110,14 +163,12 @@ new Vue({
           })
           .catch(function (err) {
             self.msg = err
-          })
-      } else {
-        this.msg = {
-          type: 'Sorry',
-          message: 'We are unable to locate the scatter plugin!',
-          isError: true
-        }
-      }
+          })   
+      })
+      
+      
+      
+      
     },
     forgetIdentity: function() {
       this.reset()
@@ -162,6 +213,10 @@ new Vue({
     },
     updateAccountKey: function () {
       this.reset()
+
+      if(!this.checkForm()) {
+        return;
+      };
       const self = this
       if (self.scatter) {
         const eos = self.scatter.eos(self.network, Eos, {
